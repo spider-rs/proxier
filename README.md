@@ -6,14 +6,14 @@ The auto white-listing proxy API lib for Rust.
 
 * WebShare
 * IpRoyale
-- DataInpulse
+* DataInpulse
 
 `cargo add proxier`
 
 Example
 
 ```rust
-use proxier::proxies::{Proxier, IPRoyaleConfiguration, WebShareConfiguration};
+use proxier::proxies::{Proxier, IPRoyaleConfiguration, WebShareConfiguration, DatainpulseConfiguration};
 
 #[tokio::main]
 async fn main() {
@@ -22,10 +22,11 @@ async fn main() {
 
     let iproyale_config = IPRoyaleConfiguration::default();
     let webshare_config = WebShareConfiguration::default();
+    let datainpulse_config = DatainpulseConfiguration::default();
 
     // setup all the configs for the proxies.
 
-    proxier.setup_proxies(Some(iproyale_config, webshare_config)).await;
+    proxier.setup_proxies(Some(iproyale_config, webshare_config, datainpulse_config)).await;
 
     // whitelist the server
     proxier.whitelist().await;
@@ -41,5 +42,15 @@ async fn main() {
 
 The following env variables are required to set.
 
+### Webshare
+
 `PROXY_SHARE_PASSWORD`
+
+### IPRoyale
+
 `IP_ROYALE_API_TOKEN`
+
+### Datainpulse
+
+`DATA_INPULSE_USERNAME`
+`DATA_INPULSE_PASSWORD`

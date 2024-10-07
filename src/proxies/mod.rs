@@ -1,11 +1,13 @@
-use iproyale::WhitelistEntry;
-use reqwest::Client;
-use webshare::ProxyIP;
-
+/// datainpulse
+pub mod datainpulse;
 /// iproyal
 pub mod iproyale;
 /// webshare proxy
 pub mod webshare;
+
+use iproyale::WhitelistEntry;
+use reqwest::Client;
+use webshare::ProxyIP;
 
 /// The ip royale configuration for the proxy.
 #[derive(Default, Clone, Debug)]
@@ -27,6 +29,10 @@ pub struct WebShareConfiguration {
     pub whitelist_entry: Option<ProxyIP>,
 }
 
+/// The datainpulse configuration for the proxy.
+#[derive(Default, Clone, Debug)]
+pub struct DatainpulseConfiguration(bool);
+
 /// The proxy service you want to use.
 #[derive(Default, Clone, Debug)]
 pub struct Proxier {
@@ -34,6 +40,8 @@ pub struct Proxier {
     pub iproyale: Option<IPRoyaleConfiguration>,
     /// Webshare service.
     pub webshare: Option<WebShareConfiguration>,
+    /// Datainpulse service residential proxies.
+    pub datainpulse: Option<DatainpulseConfiguration>,
     /// The shared client.
     pub client: Client,
     /// The server ip NAT to whitelist.
@@ -47,6 +55,7 @@ impl Proxier {
             server_ip: server_ip.into(),
             iproyale: None,
             webshare: None,
+            datainpulse: None,
             client: Client::default(),
         }
     }
@@ -55,6 +64,7 @@ impl Proxier {
         &mut self,
         iproyale: Option<IPRoyaleConfiguration>,
         webshare: Option<WebShareConfiguration>,
+        datainpulse: Option<DatainpulseConfiguration>,
     ) {
         if self.server_ip.is_empty() {
             // try to get the ip via webshare or other services.
@@ -62,12 +72,22 @@ impl Proxier {
         }
         self.iproyale = iproyale;
         self.webshare = webshare;
+        self.datainpulse = datainpulse;
     }
 
     /// Whitelist the server ips all at once.
     pub async fn whitelist(&mut self) {
         self.whitelist_webshare().await;
+        self.whitelist_datainpulse().await;
         self.whitelist_iproyale().await;
+    }
+
+    /// Whitelist webshare.
+    pub async fn whitelist_datainpulse(&mut self) {
+        if let Some(datainpulse) = self.datainpulse.as_mut() {
+            datainpulse::create_whitelist_entry(&self.client, &self.server_ip).await;
+            datainpulse.0 = true;
+        }
     }
 
     /// Whitelist webshare.
@@ -96,7 +116,15 @@ impl Proxier {
     /// Delist all the proxy entries.
     pub async fn delist(&mut self) {
         self.delist_webshare().await;
+        self.delist_datainpulse().await;
         self.delist_iproyale().await;
+    }
+
+    /// Delist a dataipnulse entry for whitelisting.
+    pub async fn delist_datainpulse(&mut self) {
+        if let Some(_) = self.datainpulse.take() {
+            datainpulse::delete_whitelist_entry(&self.client, &self.server_ip).await;
+        }
     }
 
     /// Delist a webshare entry for whitelisting.
