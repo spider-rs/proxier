@@ -4,16 +4,17 @@ The auto white-listing proxy API lib for Rust.
 
 ## Services
 
-* WebShare
-* IpRoyale
-* DataInpulse
+* [WebShare](https://www.webshare.io/)
+* [DataInpulse](https://dataimpulse.com/)
+* [Evomi](https://evomi.com/)
+* [IpRoyale](https://iproyal.com/)
 
 `cargo add proxier`
 
 Example
 
 ```rust
-use proxier::proxies::{Proxier, IPRoyaleConfiguration, WebShareConfiguration, DatainpulseConfiguration};
+use proxier::proxies::{Proxier, IPRoyaleConfiguration, WebShareConfiguration, DatainpulseConfiguration, EvomiConfiguration};
 
 #[tokio::main]
 async fn main() {
@@ -23,10 +24,11 @@ async fn main() {
     let iproyale_config = IPRoyaleConfiguration::default();
     let webshare_config = WebShareConfiguration::default();
     let datainpulse_config = DatainpulseConfiguration::default();
+    let evomi_config = EvomiConfiguration::default();
 
     // setup all the configs for the proxies.
 
-    proxier.setup_proxies(Some(iproyale_config, webshare_config, datainpulse_config)).await;
+    proxier.setup_proxies(Some(iproyale_config), Some(webshare_config), Some(datainpulse_config), Some(evomi_config)).await;
 
     // whitelist the server
     proxier.whitelist().await;
@@ -54,3 +56,7 @@ The following env variables are required to set.
 
 `DATA_INPULSE_USERNAME`
 `DATA_INPULSE_PASSWORD`
+
+### Evomi
+
+`EVOMI_API_TOKEN`

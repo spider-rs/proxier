@@ -1,5 +1,7 @@
 /// datainpulse
 pub mod datainpulse;
+/// use evomi
+pub mod evomi;
 /// iproyal
 pub mod iproyale;
 /// webshare proxy
@@ -33,6 +35,10 @@ pub struct WebShareConfiguration {
 #[derive(Default, Clone, Debug)]
 pub struct DatainpulseConfiguration(bool);
 
+/// The evomi configuration for the proxy.
+#[derive(Default, Clone, Debug)]
+pub struct EvomiConfiguration(bool);
+
 /// The proxy service you want to use.
 #[derive(Default, Clone, Debug)]
 pub struct Proxier {
@@ -42,6 +48,8 @@ pub struct Proxier {
     pub webshare: Option<WebShareConfiguration>,
     /// Datainpulse service residential proxies.
     pub datainpulse: Option<DatainpulseConfiguration>,
+    /// Evomi service proxies.
+    pub evomi: Option<EvomiConfiguration>,
     /// The shared client.
     pub client: Client,
     /// The server ip NAT to whitelist.
@@ -53,10 +61,7 @@ impl Proxier {
     pub fn new(server_ip: &str) -> Proxier {
         Proxier {
             server_ip: server_ip.into(),
-            iproyale: None,
-            webshare: None,
-            datainpulse: None,
-            client: Client::default(),
+            ..Default::default()
         }
     }
     /// Setup all of the proxies needed.
@@ -65,6 +70,7 @@ impl Proxier {
         iproyale: Option<IPRoyaleConfiguration>,
         webshare: Option<WebShareConfiguration>,
         datainpulse: Option<DatainpulseConfiguration>,
+        evomi: Option<EvomiConfiguration>,
     ) {
         if self.server_ip.is_empty() {
             // try to get the ip via webshare or other services.
@@ -73,6 +79,7 @@ impl Proxier {
         self.iproyale = iproyale;
         self.webshare = webshare;
         self.datainpulse = datainpulse;
+        self.evomi = evomi;
     }
 
     /// Whitelist the server ips all at once.
@@ -80,13 +87,22 @@ impl Proxier {
         self.whitelist_webshare().await;
         self.whitelist_datainpulse().await;
         self.whitelist_iproyale().await;
+        self.whitelist_evomi().await;
     }
 
-    /// Whitelist webshare.
+    /// Whitelist datainpulse.
     pub async fn whitelist_datainpulse(&mut self) {
         if let Some(datainpulse) = self.datainpulse.as_mut() {
             datainpulse::create_whitelist_entry(&self.client, &self.server_ip).await;
             datainpulse.0 = true;
+        }
+    }
+
+    /// Whitelist evomi. May update at anytime.
+    pub async fn whitelist_evomi(&mut self) {
+        if let Some(evomi) = self.evomi.as_mut() {
+            evomi::setup_proxy(&self.client, &self.server_ip, false).await;
+            evomi.0 = true;
         }
     }
 
@@ -118,12 +134,21 @@ impl Proxier {
         self.delist_webshare().await;
         self.delist_datainpulse().await;
         self.delist_iproyale().await;
+        self.delist_evomi().await;
     }
 
     /// Delist a dataipnulse entry for whitelisting.
     pub async fn delist_datainpulse(&mut self) {
         if let Some(_) = self.datainpulse.take() {
             datainpulse::delete_whitelist_entry(&self.client, &self.server_ip).await;
+        }
+    }
+
+    /// Delist a evomi entry for whitelisting.
+    pub async fn delist_evomi(&mut self) {
+        if let Some(evomi) = self.evomi.as_mut() {
+            evomi::setup_proxy(&self.client, &self.server_ip, true).await;
+            evomi.0 = true;
         }
     }
 
